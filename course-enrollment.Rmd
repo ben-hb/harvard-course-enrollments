@@ -1,0 +1,99 @@
+---
+title: "Harvard Course Enrollment"
+author: "Benjamin Hoffner-Brodsky"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+
+library(readxl)
+library(scales)
+library(ggthemr)
+library(janitor)
+library(tidyverse)
+
+# I opt to download, read in, and delete the .xlsx files, rather than reading
+# them directly from the url, because read_xlsx() has not yet added in a read
+# from url ability
+
+download.file("https://registrar.fas.harvard.edu/files/fas-registrar/files/class_enrollment_summary_by_term_3.22.19.xlsx",
+              destfile = "spring_2019.xlsx",
+              mode = "wb")
+              
+download.file("https://registrar.fas.harvard.edu/files/fas-registrar/files/class_enrollment_summary_by_term_03.06.18.xlsx",
+              destfile = "spring_2018.xlsx",
+              mode = "wb")
+
+# Matching clean names will allow for easier joins in the next steps
+
+spring_2019 <- read_xlsx("spring_2019.xlsx",
+                         skip = 3) %>% 
+  clean_names()
+
+spring_2018 <- read_xlsx("spring_2018.xlsx",
+                         skip = 2) %>% 
+  clean_names()
+
+# Removing files ensures a clean repo and no duplicated files
+
+file.remove(c("spring_2019.xlsx", "spring_2018.xlsx"))
+
+```
+
+```{r graphic}
+
+# Easy way to set the theme universally for the rest of the plots in this
+# document
+
+ggthemr("dust")
+
+joined <- spring_2019 %>% 
+  left_join(spring_2018, by = "course_id") %>% 
+  rename("course_name.2019" = course_name.x,
+         "course_name.2018" = course_name.y,
+         "u_grad.2019" = u_grad.x,
+         "u_grad.2018" = u_grad.y) %>% 
+  
+# Filtering for courses with large enough class size that the percent changes
+# won't be artifically large because of small class size
+  
+  filter(course_name.2018 == course_name.2019,
+         u_grad.2018 > 25) %>% 
+  select(course_name.2019, course_name.2018, u_grad.2019, u_grad.2018) %>% 
+  mutate(delta_u_grad = (u_grad.2019 - u_grad.2018)/u_grad.2018) %>% 
+  arrange(desc(delta_u_grad)) 
+
+positive_delta <- joined %>% 
+  head(4)
+
+negative_delta <- joined %>% 
+  tail(4)
+
+volatile_courses <- rbind(positive_delta, negative_delta) 
+
+# Making class names visually appealing for Bacow
+
+volatile_courses[8, 1] = "Human Trafficking, Slavery & Abolitionism"
+
+ggplot(volatile_courses) +
+  geom_col(aes(x = reorder(course_name.2019, delta_u_grad), 
+               y = delta_u_grad,
+               fill = delta_u_grad)) +
+  
+# A horizontal chart makes it easier to compare negative and positive values
+  
+  coord_flip() +
+  scale_y_continuous(labels = percent) +
+  geom_hline(yintercept = 0, colour = "blue") +
+  geom_vline(xintercept = 4.5, colour = "red", linetype = "dotted") +
+  theme(legend.position = "none") + 
+  labs(
+    title = "Harvard Courses with the Largest Percentage Change in Undergraduate Enrollment",
+    subtitle = "Changes in Enrollment from 2018-2019",
+    x = "Change in Enrollment",
+    y = "Course Name",
+    caption = "Data from Harvard Faculty of Arts and Sciences Registrar"
+  )
+```
+
