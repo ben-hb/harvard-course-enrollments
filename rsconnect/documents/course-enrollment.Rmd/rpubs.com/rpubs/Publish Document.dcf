@@ -1,0 +1,10 @@
+name: Publish Document
+title:
+username:
+account: rpubs
+server: rpubs.com
+hostUrl: rpubs.com
+appId: https://api.rpubs.com/api/v1/document/485600/c59daaec57274ddfb163983203337cad
+bundleId: https://api.rpubs.com/api/v1/document/485600/c59daaec57274ddfb163983203337cad
+url: http://rpubs.com/benjaminhb/485600
+when: 1554948928.75966

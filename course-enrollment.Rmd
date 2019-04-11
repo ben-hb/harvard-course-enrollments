@@ -64,6 +64,10 @@ joined <- spring_2019 %>%
   mutate(delta_u_grad = (u_grad.2019 - u_grad.2018)/u_grad.2018) %>% 
   arrange(desc(delta_u_grad)) 
 
+# There's probably a way to slice the top and bottom together in one step but I
+# had trouble finding an easy fix. Creating two separate variables and binding
+# them is an effective, albeit more tedious, solution
+
 positive_delta <- joined %>% 
   head(4)
 
@@ -85,15 +89,22 @@ ggplot(volatile_courses) +
   
   coord_flip() +
   scale_y_continuous(labels = percent) +
+  
+# Adding guiding lines helps to visualize distinguish the most subtantial
+# differentiators in results for viewers
+  
   geom_hline(yintercept = 0, colour = "blue") +
   geom_vline(xintercept = 4.5, colour = "red", linetype = "dotted") +
-  theme(legend.position = "none") + 
   labs(
-    title = "Harvard Courses with the Largest Percentage Change in Undergraduate Enrollment",
-    subtitle = "Changes in Enrollment from 2018-2019",
-    x = "Change in Enrollment",
-    y = "Course Name",
+    title = "Harvard Courses with the Largest \nChange in Undergraduate Enrollment",
+    subtitle = "Percent Changes in Enrollment from 2018-2019 for \nclasses with more than 25 students",
+    y = "Change in Enrollment",
+    x = "Course Name",
     caption = "Data from Harvard Faculty of Arts and Sciences Registrar"
-  )
+  ) + 
+  
+# Fill meaning is self-evident 
+  
+  guides(fill = FALSE)
 ```
 
